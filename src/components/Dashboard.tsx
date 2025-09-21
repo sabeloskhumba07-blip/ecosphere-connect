@@ -9,38 +9,47 @@ import {
   Settings,
   Home,
   Building,
-  Phone
+  Phone,
+  LogOut
 } from 'lucide-react';
 import { WaterUsageChart } from './WaterUsageChart';
 import { AnomalyAlerts } from './AnomalyAlerts';
 import { ContractorDirectory } from './ContractorDirectory';
 import { NotificationPanel } from './NotificationPanel';
-import { WaterUsageReading, Alert, Contractor, MunicipalData } from '../types';
+import { WaterUsageReading, Alert, Contractor, MunicipalData, User, ServiceRequest } from '../types';
 
 interface DashboardProps {
+  user: User;
   readings: WaterUsageReading[];
   alerts: Alert[];
   contractors: Contractor[];
+  serviceRequests: ServiceRequest[];
   municipalData: MunicipalData;
   onAcknowledgeAlert: (alertId: string) => void;
   onResolveAlert: (alertId: string) => void;
   onContactContractor: (contractor: Contractor) => void;
+  onUpdateServiceRequest: (requestId: string, updates: Partial<ServiceRequest>) => void;
   onSimulateLeak: () => void;
   onStopLeak: () => void;
   isLeakActive: boolean;
+  onLogout: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
+  user,
   readings,
   alerts,
   contractors,
+  serviceRequests,
   municipalData,
   onAcknowledgeAlert,
   onResolveAlert,
   onContactContractor,
+  onUpdateServiceRequest,
   onSimulateLeak,
   onStopLeak,
-  isLeakActive
+  isLeakActive,
+  onLogout
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'alerts' | 'contractors' | 'municipal'>('overview');
   const [viewMode, setViewMode] = useState<'hour' | 'day' | 'week'>('day');
@@ -61,7 +70,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return readingDate.toDateString() === today.toDateString();
   });
 
-  const todayUsage = todayReadings.reduce((sum, r) => sum + r.gallons, 0);
+  const todayUsage = todayReadings.reduce((sum, r) => sum + r.litres, 0);
   const averageFlow = todayReadings.length > 0 
     ? todayReadings.reduce((sum, r) => sum + r.flowRate, 0) / todayReadings.length 
     : 0;
@@ -133,7 +142,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
               <Droplets className="h-8 w-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">Ecosphere Connect</h1>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Municipal Services Portal</h1>
+                <p className="text-sm text-gray-600">{user.name} - {user.role === 'resident' ? 'Resident' : 'Contractor'}</p>
+              </div>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -157,6 +169,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <span className="text-sm font-medium">{activeAlerts.length} Alert{activeAlerts.length > 1 ? 's' : ''}</span>
                 </div>
               )}
+              
+              <button
+                onClick={onLogout}
+                className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                <span className="text-sm">Sign Out</span>
+              </button>
             </div>
           </div>
         </div>
@@ -202,21 +222,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard
                 title="Today's Usage"
-                value={`${todayUsage.toFixed(1)} gal`}
+                value={`${todayUsage.toFixed(1)}L`}
                 icon={<Droplets className="h-6 w-6" />}
                 change="-5% from yesterday"
                 changeType="positive"
               />
               <StatCard
                 title="Current Flow Rate"
-                value={`${currentReading?.flowRate.toFixed(1) || '0'} gal/min`}
+                value={`${currentReading?.flowRate.toFixed(1) || '0'}L/min`}
                 icon={<TrendingUp className="h-6 w-6" />}
                 change={isLeakActive ? "Above normal" : "Normal"}
                 changeType={isLeakActive ? "negative" : "neutral"}
               />
               <StatCard
                 title="System Pressure"
-                value={`${currentReading?.pressure.toFixed(1) || '0'} PSI`}
+                value={`${currentReading?.pressure.toFixed(1) || '0'}kPa`}
                 icon={<Settings className="h-6 w-6" />}
                 change="Optimal range"
                 changeType="positive"
@@ -233,7 +253,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="xl:col-span-2">
                 <div className="bg-white p-6 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-gray-800">Water Usage Analytics</h2>
+                    <h2 className="text-xl font-semibold text-gray-800">Water Usage Analytics (Litres)</h2>
                     <div className="flex space-x-2">
                       {['hour', 'day', 'week'].map(mode => (
                         <button
@@ -279,7 +299,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             )}
           </div>
         )}
-
+                    value={`${(municipalData.totalUsageToday / 1000).toFixed(1)}kL`}
         {activeTab === 'alerts' && (
           <AnomalyAlerts
             alerts={alerts}
@@ -312,7 +332,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   icon={<Droplets className="h-6 w-6" />}
                 />
                 <StatCard
-                  title="System Pressure"
+                    value={`${municipalData.systemPressure}kPa`}
                   value={`${municipalData.systemPressure} PSI`}
                   icon={<Settings className="h-6 w-6" />}
                   change="Optimal"
@@ -324,7 +344,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   icon={<AlertTriangle className="h-6 w-6" />}
                 />
                 <StatCard
-                  title="Avg Usage/Household"
+                    value={`${municipalData.averageUsagePerHousehold.toFixed(0)}L`}
                   value={`${municipalData.averageUsagePerHousehold.toFixed(0)} gal`}
                   icon={<Home className="h-6 w-6" />}
                 />

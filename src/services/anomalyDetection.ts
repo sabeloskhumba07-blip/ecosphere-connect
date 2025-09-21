@@ -149,13 +149,13 @@ export class AnomalyDetectionService {
 
   calculateWaterWaste(readings: WaterUsageReading[], household: HouseholdProfile): number {
     const recentReadings = readings.slice(-288); // Last 24 hours
-    const totalUsage = recentReadings.reduce((sum, r) => sum + r.gallons, 0);
+    const totalUsage = recentReadings.reduce((sum, r) => sum + r.litres, 0);
     
     return Math.max(0, totalUsage - household.averageDailyUsage);
   }
 
-  estimateLeakCost(wasteInGallons: number, costPerGallon: number = 0.004): number {
-    return wasteInGallons * costPerGallon;
+  estimateLeakCost(wasteInLitres: number, costPerLitre: number = 0.015): number {
+    return wasteInLitres * costPerLitre; // R0.015 per litre (Cape Town rates)
   }
 }
 

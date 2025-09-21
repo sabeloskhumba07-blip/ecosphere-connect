@@ -32,14 +32,14 @@ export const WaterUsageChart: React.FC<WaterUsageChartProps> = ({
       // Group by hour and show averages
       const hourGroups = groupDataByHour(readings.slice(-288));
       return hourGroups.map(group => {
-        const avgUsage = group.reduce((sum, r) => sum + r.gallons, 0) / group.length;
+        const avgUsage = group.reduce((sum, r) => sum + r.litres, 0) / group.length;
         const avgFlow = group.reduce((sum, r) => sum + r.flowRate, 0) / group.length;
         const avgPressure = group.reduce((sum, r) => sum + r.pressure, 0) / group.length;
         const avgTemp = group.reduce((sum, r) => sum + r.temperature, 0) / group.length;
         
         return {
           time: group[0].timestamp.getHours().toString().padStart(2, '0') + ':00',
-          usage: Math.round(avgUsage * 100) / 100,
+          usage: reading.litres,
           flowRate: Math.round(avgFlow * 100) / 100,
           pressure: Math.round(avgPressure * 100) / 100,
           temperature: Math.round(avgTemp * 100) / 100,
@@ -51,7 +51,7 @@ export const WaterUsageChart: React.FC<WaterUsageChartProps> = ({
     // Week view - group by day
     const dayGroups = groupDataByDay(readings);
     return dayGroups.slice(-7).map(group => {
-      const totalUsage = group.reduce((sum, r) => sum + r.gallons, 0);
+      const totalUsage = group.reduce((sum, r) => sum + r.litres, 0);
       const avgFlow = group.reduce((sum, r) => sum + r.flowRate, 0) / group.length;
       const avgPressure = group.reduce((sum, r) => sum + r.pressure, 0) / group.length;
       const avgTemp = group.reduce((sum, r) => sum + r.temperature, 0) / group.length;
@@ -74,10 +74,10 @@ export const WaterUsageChart: React.FC<WaterUsageChartProps> = ({
           <p className="font-semibold text-gray-800">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {entry.name === 'usage' && `Usage: ${entry.value} gallons`}
-              {entry.name === 'flowRate' && `Flow Rate: ${entry.value} gal/min`}
-              {entry.name === 'pressure' && `Pressure: ${entry.value} PSI`}
-              {entry.name === 'temperature' && `Temperature: ${entry.value}°F`}
+              {entry.name === 'usage' && `Usage: ${entry.value} litres`}
+              {entry.name === 'flowRate' && `Flow Rate: ${entry.value} L/min`}
+              {entry.name === 'pressure' && `Pressure: ${entry.value} kPa`}
+              {entry.name === 'temperature' && `Temperature: ${entry.value}°C`}
             </p>
           ))}
         </div>
